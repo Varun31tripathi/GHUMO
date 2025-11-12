@@ -1,0 +1,17 @@
+# Environment variables
+.env
+.env.local
+.env.production
+
+# API Keys
+config.js
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log

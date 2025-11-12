@@ -93,6 +93,18 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
         
+        .search-photo {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .search-photo:hover {
+            transform: scale(2);
+            z-index: 1000;
+            position: relative;
+        }
+        
         .action-btn {
             position: relative;
             overflow: hidden;
@@ -112,10 +124,35 @@
         .action-btn:hover::before {
             left: 100%;
         }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/@googlemaps/extended-component-library/0.6.11/index.min.js"></script>
-    <gmpx-api-loader key="AIzaSyAThBvfegbLCNbV3kE0BblHJT64roIYrdk" solution-channel="GMP_GE_placepicker_v2"></gmpx-api-loader>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAThBvfegbLCNbV3kE0BblHJT64roIYrdk&libraries=places" async defer></script>
+    <gmpx-api-loader key="" solution-channel="GMP_GE_placepicker_v2"></gmpx-api-loader>
+    <script src="https://maps.googleapis.com/maps/api/js?key=&libraries=places" async defer></script>
+    <script>
+        // Load API key from environment or config
+        const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';
+        document.querySelector('gmpx-api-loader').setAttribute('key', GOOGLE_MAPS_API_KEY);
+        document.querySelector('script[src*="maps.googleapis.com"]').src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    </script>
+    <!-- Weather API Integration -->
+    <script src="weather.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const exploreBtn = document.getElementById('exploreBtn');
@@ -141,8 +178,15 @@
                     const place = placePicker.value;
                     console.log('Place selected:', place);
                     if (place && place.location) {
-                        selectedPlace = place;
-                        console.log('Selected place stored:', selectedPlace);
+                        // Check if place is in India
+                        const address = place.formattedAddress || '';
+                        if (address.toLowerCase().includes('india') || address.toLowerCase().includes('भारत')) {
+                            selectedPlace = place;
+                            console.log('Selected place stored:', selectedPlace);
+                        } else {
+                            alert('Please select a destination within India only.');
+                            selectedPlace = null;
+                        }
                     }
                 });
             }
@@ -152,9 +196,158 @@
                 if (selectedPlace) {
                     showSearchResults(selectedPlace);
                 } else {
-                    alert('Please select a destination first');
+                    alert('Please select an Indian destination first');
                 }
             });
+            
+            // Signup modal functionality
+            document.getElementById('getStartedBtn').addEventListener('click', function() {
+                document.getElementById('signupModal').classList.add('show');
+            });
+            
+            document.getElementById('closeModal').addEventListener('click', function() {
+                document.getElementById('signupModal').classList.remove('show');
+            });
+            
+            document.getElementById('signupModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+            
+            document.getElementById('signupForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Signup successful! Welcome to TripPlanner!');
+                document.getElementById('signupModal').classList.remove('show');
+            });
+            
+            // Global function for planning trip
+            window.planTrip = function(name, address) {
+                const locationData = {
+                    name: name,
+                    address: address,
+                    timestamp: new Date().toISOString()
+                };
+                const encodedData = encodeURIComponent(JSON.stringify(locationData));
+                window.location.href = `trip.html?location=${encodedData}`;
+            };
+            
+            // Handle Places To Visit click
+            document.body.addEventListener('click', function(e) {
+                if (e.target.closest('a[href="#places"]')) {
+                    e.preventDefault();
+                    document.getElementById('features').classList.add('hidden');
+                    document.getElementById('destinations').classList.add('hidden');
+                    document.querySelector('.scroll-container').parentElement.classList.add('hidden');
+                    document.getElementById('searchResults').classList.add('hidden');
+                    document.getElementById('places').classList.remove('hidden');
+                }
+            });
+            
+            // City information data
+            const cityInfo = {
+                'Delhi': { name: 'Delhi', description: 'India\'s capital city, rich in history and culture with iconic monuments like Red Fort and India Gate.', bestTime: 'October to March', famous: 'Red Fort, India Gate, Lotus Temple', image: 'images/himalayas.jpg' },
+                'Mumbai': { name: 'Mumbai', description: 'The financial capital of India and home to Bollywood, known for its vibrant nightlife and street food.', bestTime: 'November to February', famous: 'Gateway of India, Marine Drive, Bollywood', image: 'images/mumbai.jpg' },
+                'Agra': { name: 'Agra', description: 'Home to the magnificent Taj Mahal, one of the Seven Wonders of the World.', bestTime: 'October to March', famous: 'Taj Mahal, Agra Fort, Mehtab Bagh', image: 'images/himalayas.jpg' },
+                'Jaipur': { name: 'Jaipur', description: 'The Pink City of Rajasthan, famous for its royal palaces and vibrant culture.', bestTime: 'October to March', famous: 'Hawa Mahal, City Palace, Amber Fort', image: 'images/jaipur.jpg' },
+                'Kerala': { name: 'Kerala', description: 'God\'s Own Country, known for its backwaters, spices, and Ayurvedic treatments.', bestTime: 'September to March', famous: 'Backwaters, Munnar, Kochi', image: 'images/kerala.jpg' },
+                'Goa': { name: 'Goa', description: 'India\'s beach paradise with Portuguese heritage, perfect for relaxation and nightlife.', bestTime: 'November to February', famous: 'Beaches, Churches, Nightlife', image: 'images/goa.jpg' },
+                'Assam': { name: 'Assam', description: 'Known for its tea gardens and wildlife sanctuaries, home to the one-horned rhinoceros.', bestTime: 'October to April', famous: 'Tea Gardens, Kaziranga National Park', image: 'images/assam.webp' }
+            };
+            
+            // Handle city card clicks
+            document.body.addEventListener('click', function(e) {
+                const cityCard = e.target.closest('#places .cursor-pointer');
+                if (cityCard) {
+                    const cityName = cityCard.querySelector('h3').textContent;
+                    const info = cityInfo[cityName] || { name: cityName, description: 'A beautiful destination in India.', bestTime: 'October to March', famous: 'Local attractions' };
+                    
+                    document.getElementById('cityModalContent').innerHTML = `
+                        <div class="relative rounded-xl overflow-hidden mb-6" style="background-image: url('${info.image}'); background-size: cover; background-position: center; height: 200px;">
+                            <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                            <div class="relative z-10 flex items-center justify-center h-full text-center text-white">
+                                <div>
+                                    <div class="bg-white bg-opacity-20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
+                                        <i class="fas fa-map-marker-alt text-white text-2xl"></i>
+                                    </div>
+                                    <h2 class="text-3xl font-bold mb-2">${info.name}</h2>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <p class="text-gray-600 text-lg leading-relaxed text-center">${info.description}</p>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-calendar-alt text-blue-600 text-xl mr-3"></i>
+                                    <h3 class="font-bold text-gray-800">Best Time to Visit</h3>
+                                </div>
+                                <p class="text-gray-700 ml-8">${info.bestTime}</p>
+                            </div>
+                            
+                            <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-star text-green-600 text-xl mr-3"></i>
+                                    <h3 class="font-bold text-gray-800">Famous For</h3>
+                                </div>
+                                <p class="text-gray-700 ml-8">${info.famous}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-yellow-50 to-orange-100 p-4 rounded-xl mb-6">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-cloud-sun text-orange-600 text-xl mr-3"></i>
+                                <h3 class="font-bold text-gray-800">Current Weather</h3>
+                            </div>
+                            <div id="weatherInfo-${cityName}" class="ml-8 text-gray-700">Loading weather...</div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl mb-6">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-calendar-check text-purple-600 text-xl mr-3"></i>
+                                <h3 class="font-bold text-gray-800">Best Time to Visit (Weather-Based)</h3>
+                            </div>
+                            <div id="bestTimeInfo-${cityName}" class="ml-8 text-gray-700">Analyzing weather...</div>
+                        </div>
+                        
+                        <div class="flex gap-3 justify-center">
+                            <button class="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition flex items-center">
+                                <i class="fas fa-route mr-2"></i>Plan Trip
+                            </button>
+                            <button class="bg-purple-600 text-white px-6 py-2 rounded-full hover:bg-purple-700 transition flex items-center">
+                                <i class="fas fa-heart mr-2"></i>Save
+                            </button>
+                        </div>
+                    `;
+                    
+                    document.getElementById('cityModal').classList.add('show');
+                    
+                    // Fetch weather data and best time to visit
+                    fetchWeather(cityName);
+                    getBestTimeToVisit(cityName).then(bestTime => {
+                        const bestTimeElement = document.getElementById(`bestTimeInfo-${cityName}`);
+                        if (bestTimeElement) {
+                            bestTimeElement.textContent = bestTime;
+                        }
+                    });
+                }
+            });
+            
+            // Close city modal
+            document.getElementById('closeCityModal').addEventListener('click', function() {
+                document.getElementById('cityModal').classList.remove('show');
+            });
+            
+            document.getElementById('cityModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+            
+
             
             function showSearchResults(place) {
                 console.log('Showing results for place:', place);
@@ -245,7 +438,7 @@
                             </div>
                             <div class="photo-gallery grid grid-cols-2 md:grid-cols-4 gap-6">
                                 ${placeImages.map((img, index) => `
-                                    <div class="relative group overflow-hidden rounded-xl shadow-lg">
+                                    <div class="search-photo relative group rounded-xl shadow-lg">
                                         <img src="${img}" alt="${placeName}" class="w-full h-40 object-cover">
                                         <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                                             <div class="absolute bottom-4 left-4 text-white">
@@ -275,7 +468,7 @@
                                 </div>
                                 <h4 class="text-xl font-bold text-gray-800 mb-2">Plan Itinerary</h4>
                                 <p class="text-gray-600 mb-4">Create your perfect travel plan</p>
-                                <button class="action-btn w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition">
+                                <button onclick="planTrip('${placeName}', '${placeAddress}')" class="action-btn w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition">
                                     Plan Trip
                                 </button>
                             </div>
@@ -326,6 +519,7 @@
                     document.getElementById('features').classList.remove('hidden');
                     document.getElementById('destinations').classList.remove('hidden');
                     document.querySelector('.scroll-container').parentElement.classList.remove('hidden');
+                    document.getElementById('places').classList.add('hidden');
                 });
             }
             
@@ -366,20 +560,25 @@
             
             function getNearbyPlaces(placeName) {
                 const nearbyPlacesData = {
-                    'Paris': [
-                        { name: 'Louvre Museum', type: 'Museum', distance: '0.5 km' },
-                        { name: 'Notre-Dame Cathedral', type: 'Historic Site', distance: '1.2 km' },
-                        { name: 'Seine River', type: 'Natural Feature', distance: '0.3 km' }
+                    'Delhi': [
+                        { name: 'Red Fort', type: 'Historic Site', distance: '0.5 km' },
+                        { name: 'India Gate', type: 'Monument', distance: '1.2 km' },
+                        { name: 'Lotus Temple', type: 'Temple', distance: '2.3 km' }
                     ],
-                    'Tokyo': [
-                        { name: 'Senso-ji Temple', type: 'Temple', distance: '2.1 km' },
-                        { name: 'Tokyo Skytree', type: 'Landmark', distance: '1.8 km' },
-                        { name: 'Imperial Palace', type: 'Historic Site', distance: '3.2 km' }
+                    'Mumbai': [
+                        { name: 'Gateway of India', type: 'Monument', distance: '2.1 km' },
+                        { name: 'Marine Drive', type: 'Landmark', distance: '1.8 km' },
+                        { name: 'Elephanta Caves', type: 'Historic Site', distance: '15 km' }
                     ],
-                    'New York': [
-                        { name: 'Central Park', type: 'Park', distance: '0.8 km' },
-                        { name: 'Times Square', type: 'Landmark', distance: '1.5 km' },
-                        { name: 'Empire State Building', type: 'Landmark', distance: '2.0 km' }
+                    'Agra': [
+                        { name: 'Taj Mahal', type: 'Monument', distance: '0.8 km' },
+                        { name: 'Agra Fort', type: 'Historic Site', distance: '1.5 km' },
+                        { name: 'Mehtab Bagh', type: 'Garden', distance: '2.0 km' }
+                    ],
+                    'Jaipur': [
+                        { name: 'Hawa Mahal', type: 'Palace', distance: '0.5 km' },
+                        { name: 'City Palace', type: 'Palace', distance: '0.8 km' },
+                        { name: 'Amber Fort', type: 'Fort', distance: '11 km' }
                     ]
                 };
                 
@@ -413,32 +612,63 @@
                     <a href="#features" class="text-gray-700 hover:text-blue-600 transition">Features</a>
                     <a href="#contact" class="text-gray-700 hover:text-blue-600 transition">Contact</a>
                 </div>
-                <button class="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition">
+                <button id="getStartedBtn" class="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition">
                     Get Started
                 </button>
             </div>
         </div>
     </nav>
 
+    <!-- Secondary Navigation -->
+    <nav class="bg-gray-100 border-b border-gray-200 fixed w-full z-40" style="top: 72px;">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-center items-center py-3">
+                <div class="flex space-x-8">
+                    <a href="#places" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
+                        <i class="fas fa-map-marker-alt mr-1"></i>Places To Visit
+                    </a>
+                    <a href="#packages" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
+                        <i class="fas fa-box mr-1"></i>Packages
+                    </a>
+                    <a href="#hotels" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
+                        <i class="fas fa-hotel mr-1"></i>Hotels
+                    </a>
+                    <a href="#reach" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
+                        <i class="fas fa-route mr-1"></i>How to Reach
+                    </a>
+                    <a href="#time" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
+                        <i class="fas fa-calendar mr-1"></i>Best Time To Visit
+                    </a>
+                    <a href="#photos" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
+                        <i class="fas fa-camera mr-1"></i>Photos
+                    </a>
+                    <a href="#more" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
+                        <i class="fas fa-ellipsis-h mr-1"></i>More
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
     <!-- Hero Section -->
-    <section id="home" class="relative h-screen flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-700">
-        <div class="absolute inset-0 bg-black opacity-40"></div>
+    <section id="home" class="relative h-screen flex items-center justify-center" style="padding-top: 120px; background-image: url('images/himalayas.jpg'); background-size: cover; background-position: center; background-attachment: fixed;">
+        <div class="absolute inset-0 bg-black opacity-60"></div>
         <div class="relative z-10 text-center text-white px-4">
             <h1 class="text-5xl md:text-7xl font-bold mb-6">
-                Discover Your Next
-                <span class="text-yellow-400">Adventure</span>
+                Discover Incredible
+                <span class="text-yellow-400">India</span>
             </h1>
             <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-                Plan unforgettable trips with our AI-powered travel planner. From hidden gems to popular destinations.
+                Plan unforgettable trips across India with our AI-powered travel planner. From hidden gems to iconic destinations.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <div id="searchContainer" class="relative">
                     <button id="exploreBtn" class="bg-yellow-400 text-gray-900 px-8 py-4 rounded-full text-lg font-semibold hover:bg-yellow-300 transition">
                         <i class="fas fa-search mr-2"></i>
-                        Explore Destinations
+                        Explore India
                     </button>
                     <div id="searchBar" class="hidden bg-white rounded-full px-6 py-4 shadow-lg flex items-center">
-                        <gmpx-place-picker placeholder="Search your Dream destination" class="bg-transparent outline-none text-gray-900 text-lg w-80"></gmpx-place-picker>
+                        <gmpx-place-picker placeholder="Search destinations in India" class="bg-transparent outline-none text-gray-900 text-lg w-80" country="IN" type="tourist_attraction"></gmpx-place-picker>
                         <button id="searchBtn" class="bg-blue-600 text-white px-4 py-2 rounded-full ml-2 hover:bg-blue-700 transition">
                             <i class="fas fa-search"></i>
                         </button>
@@ -490,6 +720,198 @@
         </div>
     </section>
 
+    <!-- Places to Visit Section -->
+    <section id="places" class="hidden py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Famous Places to Visit in India</h2>
+                <p class="text-xl text-gray-600">Explore India's most iconic cities and tourist destinations</p>
+            </div>
+            <div class="grid md:grid-cols-4 lg:grid-cols-5 gap-6">
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-landmark text-blue-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Delhi</h3>
+                    <p class="text-sm text-gray-600">Capital City</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Heritage</span>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Culture</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-city text-purple-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Mumbai</h3>
+                    <p class="text-sm text-gray-600">Financial Capital</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Business</span>
+                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Bollywood</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-mosque text-pink-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Agra</h3>
+                    <p class="text-sm text-gray-600">Taj Mahal</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-pink-100 text-pink-800 text-xs px-2 py-1 rounded-full">UNESCO</span>
+                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Romance</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-chess-rook text-orange-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Jaipur</h3>
+                    <p class="text-sm text-gray-600">Pink City</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">Royal</span>
+                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">Palaces</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-water text-green-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Kerala</h3>
+                    <p class="text-sm text-gray-600">Backwaters</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Nature</span>
+                        <span class="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full">Ayurveda</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-umbrella-beach text-cyan-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Goa</h3>
+                    <p class="text-sm text-gray-600">Beach Paradise</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-cyan-100 text-cyan-800 text-xs px-2 py-1 rounded-full">Beaches</span>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Nightlife</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-mountain text-indigo-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Manali</h3>
+                    <p class="text-sm text-gray-600">Hill Station</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">Adventure</span>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Snow</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-om text-yellow-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Varanasi</h3>
+                    <p class="text-sm text-gray-600">Holy City</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Spiritual</span>
+                        <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">Ganges</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-laptop-code text-teal-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Bangalore</h3>
+                    <p class="text-sm text-gray-600">IT Hub</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full">Tech</span>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Gardens</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-utensils text-red-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Hyderabad</h3>
+                    <p class="text-sm text-gray-600">City of Nizams</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Biryani</span>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">History</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-university text-blue-700 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Kolkata</h3>
+                    <p class="text-sm text-gray-600">Cultural Capital</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Art</span>
+                        <span class="bg-pink-100 text-pink-800 text-xs px-2 py-1 rounded-full">Literature</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-industry text-gray-600 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Chennai</h3>
+                    <p class="text-sm text-gray-600">Detroit of India</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Auto</span>
+                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Tamil</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-leaf text-green-700 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Darjeeling</h3>
+                    <p class="text-sm text-gray-600">Tea Gardens</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Tea</span>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Hills</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-ship text-blue-800 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Kochi</h3>
+                    <p class="text-sm text-gray-600">Queen of Arabian Sea</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Port</span>
+                        <span class="bg-cyan-100 text-cyan-800 text-xs px-2 py-1 rounded-full">Spices</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-snowflake text-cyan-700 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Shimla</h3>
+                    <p class="text-sm text-gray-600">Summer Capital</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-cyan-100 text-cyan-800 text-xs px-2 py-1 rounded-full">Colonial</span>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Cool</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-sun text-yellow-700 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Rajasthan</h3>
+                    <p class="text-sm text-gray-600">Desert State</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Desert</span>
+                        <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">Forts</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-tree text-green-800 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Assam</h3>
+                    <p class="text-sm text-gray-600">Tea & Wildlife</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Wildlife</span>
+                        <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full">Rhino</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-temple-buddhist text-orange-700 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Ladakh</h3>
+                    <p class="text-sm text-gray-600">Little Tibet</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">Buddhist</span>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">High Alt</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-fish text-blue-900 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Andaman</h3>
+                    <p class="text-sm text-gray-600">Island Paradise</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Diving</span>
+                        <span class="bg-cyan-100 text-cyan-800 text-xs px-2 py-1 rounded-full">Pristine</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition cursor-pointer">
+                    <i class="fas fa-fire text-red-700 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-gray-800">Hampi</h3>
+                    <p class="text-sm text-gray-600">Ruins of Vijayanagara</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Ancient</span>
+                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">Ruins</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Search Results Section -->
     <section id="searchResults" class="hidden py-20 bg-white">
         <div class="max-w-4xl mx-auto px-4">
@@ -505,8 +927,8 @@
     <section id="destinations" class="py-20 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">Popular Destinations</h2>
-                <p class="text-xl text-gray-600">Explore the world's most amazing places</p>
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Popular Indian Destinations</h2>
+                <p class="text-xl text-gray-600">Explore India's most amazing places</p>
             </div>
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="relative group overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300">
@@ -515,7 +937,7 @@
                     </div>
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                     <div class="absolute bottom-4 left-4 text-white">
-                        <h3 class="text-xl font-bold">Swiss Alps</h3>
+                        <h3 class="text-xl font-bold">Himalayas</h3>
                         <p class="text-sm opacity-90">Mountain Adventures</p>
                     </div>
                 </div>
@@ -525,8 +947,8 @@
                     </div>
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                     <div class="absolute bottom-4 left-4 text-white">
-                        <h3 class="text-xl font-bold">Maldives</h3>
-                        <p class="text-sm opacity-90">Tropical Paradise</p>
+                        <h3 class="text-xl font-bold">Goa</h3>
+                        <p class="text-sm opacity-90">Beach Paradise</p>
                     </div>
                 </div>
                 <div class="relative group overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300">
@@ -535,18 +957,18 @@
                     </div>
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                     <div class="absolute bottom-4 left-4 text-white">
-                        <h3 class="text-xl font-bold">Amazon</h3>
-                        <p class="text-sm opacity-90">Rainforest Explorer</p>
+                        <h3 class="text-xl font-bold">Kerala</h3>
+                        <p class="text-sm opacity-90">Backwater Explorer</p>
                     </div>
                 </div>
                 <div class="relative group overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300">
                     <div class="h-64 bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
-                        <i class="fas fa-city text-white text-6xl"></i>
+                        <i class="fas fa-mosque text-white text-6xl"></i>
                     </div>
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                     <div class="absolute bottom-4 left-4 text-white">
-                        <h3 class="text-xl font-bold">Tokyo</h3>
-                        <p class="text-sm opacity-90">Urban Adventure</p>
+                        <h3 class="text-xl font-bold">Rajasthan</h3>
+                        <p class="text-sm opacity-90">Royal Heritage</p>
                     </div>
                 </div>
             </div>
@@ -556,97 +978,97 @@
     <!-- Infinite Scrolling Famous Places -->
     <section class="py-20 bg-white overflow-hidden">
         <div class="text-center mb-12">
-            <h2 class="text-4xl font-bold text-gray-800 mb-4">Famous Places Around the World</h2>
-            <p class="text-xl text-gray-600">Discover iconic destinations that inspire wanderlust</p>
+            <h2 class="text-4xl font-bold text-gray-800 mb-4">Famous Places Across India</h2>
+            <p class="text-xl text-gray-600">Discover iconic Indian destinations that inspire wanderlust</p>
         </div>
         
         <div class="scroll-container">
             <div class="scroll-track">
                 <!-- First set of images -->
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=300&h=200&fit=crop" alt="Paris Eiffel Tower" class="scroll-image">
+                    <img src="images/himalayas.jpg" alt="Himalayas" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">Paris</h3>
-                        <p class="text-white text-sm">City of Light</p>
+                        <h3 class="text-white font-bold text-lg">Himalayas</h3>
+                        <p class="text-white text-sm">Mountain Paradise</p>
                     </div>
                 </div>
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=200&fit=crop" alt="Santorini Greece" class="scroll-image">
+                    <img src="images/assam.webp" alt="Assam" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">Santorini</h3>
-                        <p class="text-white text-sm">Greek Paradise</p>
+                        <h3 class="text-white font-bold text-lg">Assam</h3>
+                        <p class="text-white text-sm">Tea Gardens</p>
                     </div>
                 </div>
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1549144511-f099e773c147?w=300&h=200&fit=crop" alt="Bali Indonesia" class="scroll-image">
+                    <img src="images/kerala.jpg" alt="Kerala Backwaters" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">Bali</h3>
-                        <p class="text-white text-sm">Island of Gods</p>
+                        <h3 class="text-white font-bold text-lg">Kerala</h3>
+                        <p class="text-white text-sm">God's Own Country</p>
                     </div>
                 </div>
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=200&fit=crop" alt="New York" class="scroll-image">
+                    <img src="images/jaipur.jpg" alt="Jaipur" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">New York</h3>
-                        <p class="text-white text-sm">The Big Apple</p>
+                        <h3 class="text-white font-bold text-lg">Jaipur</h3>
+                        <p class="text-white text-sm">Pink City</p>
                     </div>
                 </div>
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&h=200&fit=crop" alt="Dubai" class="scroll-image">
+                    <img src="images/mumbai.jpg" alt="Mumbai" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">Dubai</h3>
-                        <p class="text-white text-sm">Modern Marvel</p>
+                        <h3 class="text-white font-bold text-lg">Mumbai</h3>
+                        <p class="text-white text-sm">City of Dreams</p>
                     </div>
                 </div>
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1528181304800-259b08848526?w=300&h=200&fit=crop" alt="Thailand" class="scroll-image">
+                    <img src="images/goa.jpg" alt="Goa" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">Thailand</h3>
-                        <p class="text-white text-sm">Land of Smiles</p>
+                        <h3 class="text-white font-bold text-lg">Goa</h3>
+                        <p class="text-white text-sm">Beach Capital</p>
                     </div>
                 </div>
                 
                 <!-- Duplicate set for seamless loop -->
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=300&h=200&fit=crop" alt="Paris Eiffel Tower" class="scroll-image">
+                    <img src="images/himalayas.jpg" alt="Himalayas" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">Paris</h3>
-                        <p class="text-white text-sm">City of Light</p>
+                        <h3 class="text-white font-bold text-lg">Himalayas</h3>
+                        <p class="text-white text-sm">Mountain Paradise</p>
                     </div>
                 </div>
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=200&fit=crop" alt="Santorini Greece" class="scroll-image">
+                    <img src="images/assam.webp" alt="Assam" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">Santorini</h3>
-                        <p class="text-white text-sm">Greek Paradise</p>
+                        <h3 class="text-white font-bold text-lg">Assam</h3>
+                        <p class="text-white text-sm">Tea Gardens</p>
                     </div>
                 </div>
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1549144511-f099e773c147?w=300&h=200&fit=crop" alt="Bali Indonesia" class="scroll-image">
+                    <img src="images/kerala.jpg" alt="Kerala Backwaters" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">Bali</h3>
-                        <p class="text-white text-sm">Island of Gods</p>
+                        <h3 class="text-white font-bold text-lg">Kerala</h3>
+                        <p class="text-white text-sm">God's Own Country</p>
                     </div>
                 </div>
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=200&fit=crop" alt="New York" class="scroll-image">
+                    <img src="images/jaipur.jpg" alt="Jaipur" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">New York</h3>
-                        <p class="text-white text-sm">The Big Apple</p>
+                        <h3 class="text-white font-bold text-lg">Jaipur</h3>
+                        <p class="text-white text-sm">Pink City</p>
                     </div>
                 </div>
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&h=200&fit=crop" alt="Dubai" class="scroll-image">
+                    <img src="images/mumbai.jpg" alt="Mumbai" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">Dubai</h3>
-                        <p class="text-white text-sm">Modern Marvel</p>
+                        <h3 class="text-white font-bold text-lg">Mumbai</h3>
+                        <p class="text-white text-sm">City of Dreams</p>
                     </div>
                 </div>
                 <div class="scroll-item">
-                    <img src="https://images.unsplash.com/photo-1528181304800-259b08848526?w=300&h=200&fit=crop" alt="Thailand" class="scroll-image">
+                    <img src="images/goa.jpg" alt="Goa" class="scroll-image">
                     <div class="scroll-overlay">
-                        <h3 class="text-white font-bold text-lg">Thailand</h3>
-                        <p class="text-white text-sm">Land of Smiles</p>
+                        <h3 class="text-white font-bold text-lg">Goa</h3>
+                        <p class="text-white text-sm">Beach Capital</p>
                     </div>
                 </div>
             </div>
@@ -654,9 +1076,10 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="py-20 bg-gradient-to-r from-blue-600 to-purple-700">
-        <div class="max-w-4xl mx-auto text-center px-4">
-            <h2 class="text-4xl font-bold text-white mb-6">Readyy to Start Your Journey?</h2>
+    <section class="py-20 relative" style="background-image: url('images/kerala.jpg'); background-size: cover; background-position: center; background-attachment: fixed;">
+        <div class="absolute inset-0 bg-black opacity-70"></div>
+        <div class="max-w-4xl mx-auto text-center px-4 relative z-10">
+            <h2 class="text-4xl font-bold text-white mb-6">Ready to Start Your Journey?</h2>
             <p class="text-xl text-blue-100 mb-8">
                 Join thousands of travelers who trust TripPlanner for their adventures
             </p>
@@ -725,6 +1148,46 @@
             </div>
         </div>
     </footer>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 relative">
+            <button id="closeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Join TripPlanner</h2>
+            <form id="signupForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Full Name</label>
+                    <input type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                    <input type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                    <input type="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                    Create Account
+                </button>
+            </form>
+            <p class="text-center text-gray-600 text-sm mt-4">
+                Already have an account? <a href="#" class="text-blue-600 hover:underline">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- City Info Modal -->
+    <div id="cityModal" class="modal">
+        <div class="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 relative">
+            <button id="closeCityModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <div id="cityModalContent"></div>
+        </div>
+    </div>
 
     <script>
         // Smooth scrolling for navigation links
