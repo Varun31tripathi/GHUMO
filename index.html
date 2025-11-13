@@ -141,16 +141,53 @@
             align-items: center;
             justify-content: center;
         }
+        
+        .dropdown {
+            position: relative;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+        
+        .dropdown.show .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .dropdown-item {
+            padding: 12px 16px;
+            color: #374151;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .dropdown-item i {
+            margin-right: 8px;
+            width: 16px;
+        }
     </style>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/@googlemaps/extended-component-library/0.6.11/index.min.js"></script>
-    <gmpx-api-loader key="" solution-channel="GMP_GE_placepicker_v2"></gmpx-api-loader>
-    <script src="https://maps.googleapis.com/maps/api/js?key=&libraries=places" async defer></script>
-    <script>
-        // Load API key from environment or config
-        const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';
-        document.querySelector('gmpx-api-loader').setAttribute('key', GOOGLE_MAPS_API_KEY);
-        document.querySelector('script[src*="maps.googleapis.com"]').src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-    </script>
+    <gmpx-api-loader key="AIzaSyAThBvfegbLCNbV3kE0BblHJT64roIYrdk" solution-channel="GMP_GE_placepicker_v2"></gmpx-api-loader>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAThBvfegbLCNbV3kE0BblHJT64roIYrdk&libraries=places" async defer></script>
     <!-- Weather API Integration -->
     <script src="weather.js"></script>
     <script>
@@ -173,23 +210,31 @@
             
             let selectedPlace = null;
             
-            if (placePicker) {
-                placePicker.addEventListener('gmpx-placechange', () => {
-                    const place = placePicker.value;
-                    console.log('Place selected:', place);
-                    if (place && place.location) {
-                        // Check if place is in India
-                        const address = place.formattedAddress || '';
-                        if (address.toLowerCase().includes('india') || address.toLowerCase().includes('भारत')) {
-                            selectedPlace = place;
-                            console.log('Selected place stored:', selectedPlace);
-                        } else {
-                            alert('Please select a destination within India only.');
-                            selectedPlace = null;
+            // Wait for Google Maps to load before setting up place picker
+            function initializePlacePicker() {
+                const placePicker = document.querySelector('gmpx-place-picker');
+                if (placePicker) {
+                    placePicker.addEventListener('gmpx-placechange', () => {
+                        const place = placePicker.value;
+                        console.log('Place selected:', place);
+                        if (place && place.location) {
+                            const address = place.formattedAddress || '';
+                            if (address.toLowerCase().includes('india') || address.toLowerCase().includes('भारत')) {
+                                selectedPlace = place;
+                                console.log('Selected place stored:', selectedPlace);
+                            } else {
+                                alert('Please select a destination within India only.');
+                                selectedPlace = null;
+                            }
                         }
-                    }
-                });
+                    });
+                } else {
+                    setTimeout(initializePlacePicker, 100);
+                }
             }
+            
+            // Initialize after a short delay to ensure components are loaded
+            setTimeout(initializePlacePicker, 500);
             
             document.getElementById('searchBtn').addEventListener('click', function() {
                 console.log('Search button clicked, selectedPlace:', selectedPlace);
@@ -229,8 +274,32 @@
                     timestamp: new Date().toISOString()
                 };
                 const encodedData = encodeURIComponent(JSON.stringify(locationData));
-                window.location.href = `trip.html?location=${encodedData}`;
+                window.open(`trip.html?location=${encodedData}`, '_blank');
             };
+            
+            // Handle Packages click
+            document.body.addEventListener('click', function(e) {
+                if (e.target.closest('a[href="#packages"]')) {
+                    e.preventDefault();
+                    document.getElementById('packagesModal').classList.add('show');
+                }
+            });
+            
+            // Handle More dropdown
+            const moreDropdown = document.getElementById('moreDropdown');
+            moreDropdown.addEventListener('click', function(e) {
+                if (e.target.closest('a[href="#more"]')) {
+                    e.preventDefault();
+                    this.classList.toggle('show');
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!moreDropdown.contains(e.target)) {
+                    moreDropdown.classList.remove('show');
+                }
+            });
             
             // Handle Places To Visit click
             document.body.addEventListener('click', function(e) {
@@ -305,13 +374,7 @@
                             <div id="weatherInfo-${cityName}" class="ml-8 text-gray-700">Loading weather...</div>
                         </div>
                         
-                        <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl mb-6">
-                            <div class="flex items-center mb-2">
-                                <i class="fas fa-calendar-check text-purple-600 text-xl mr-3"></i>
-                                <h3 class="font-bold text-gray-800">Best Time to Visit (Weather-Based)</h3>
-                            </div>
-                            <div id="bestTimeInfo-${cityName}" class="ml-8 text-gray-700">Analyzing weather...</div>
-                        </div>
+
                         
                         <div class="flex gap-3 justify-center">
                             <button class="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition flex items-center">
@@ -325,14 +388,8 @@
                     
                     document.getElementById('cityModal').classList.add('show');
                     
-                    // Fetch weather data and best time to visit
+                    // Fetch weather data
                     fetchWeather(cityName);
-                    getBestTimeToVisit(cityName).then(bestTime => {
-                        const bestTimeElement = document.getElementById(`bestTimeInfo-${cityName}`);
-                        if (bestTimeElement) {
-                            bestTimeElement.textContent = bestTime;
-                        }
-                    });
                 }
             });
             
@@ -347,7 +404,31 @@
                 }
             });
             
+            // Close packages modal
+            document.getElementById('closePackagesModal').addEventListener('click', function() {
+                document.getElementById('packagesModal').classList.remove('show');
+            });
+            
+            document.getElementById('packagesModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+            
 
+            
+            // Helper function to extract city name from address
+            function extractCityName(address) {
+                const parts = address.split(',');
+                // Look for city name (usually second or third part)
+                for (let i = 1; i < parts.length; i++) {
+                    const part = parts[i].trim();
+                    if (part && !part.match(/\d/) && part !== 'India') {
+                        return part;
+                    }
+                }
+                return parts[parts.length - 2]?.trim() || 'India';
+            }
             
             function showSearchResults(place) {
                 console.log('Showing results for place:', place);
@@ -363,7 +444,8 @@
                 
                 // Extract place information safely
                 const placeName = place.displayName || place.name || 'Unknown Location';
-                const placeAddress = place.formattedAddress || 'Address not available';
+                const fullAddress = place.formattedAddress || 'Address not available';
+                const placeAddress = extractCityName(fullAddress);
                 const placeId = place.id || 'N/A';
                 
                 let coordinates = 'N/A';
@@ -594,6 +676,19 @@
                     { name: 'Shopping Area', type: 'Shopping', distance: '0.6 km' }
                 ];
             }
+            
+            function getBestTimeToVisit(cityName) {
+                const bestTimes = {
+                    'Delhi': 'October to March (Cool and pleasant weather)',
+                    'Mumbai': 'November to February (Dry season)',
+                    'Agra': 'October to March (Avoid summer heat)',
+                    'Jaipur': 'October to March (Pleasant temperatures)',
+                    'Kerala': 'September to March (Post-monsoon)',
+                    'Goa': 'November to February (Peak tourist season)',
+                    'Assam': 'October to April (Dry season)'
+                };
+                return Promise.resolve(bestTimes[cityName] || 'October to March (Generally pleasant)');
+            }
         });
     </script>
 </head>
@@ -636,15 +731,26 @@
                     <a href="#reach" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
                         <i class="fas fa-route mr-1"></i>How to Reach
                     </a>
-                    <a href="#time" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
-                        <i class="fas fa-calendar mr-1"></i>Best Time To Visit
-                    </a>
-                    <a href="#photos" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
-                        <i class="fas fa-camera mr-1"></i>Photos
-                    </a>
-                    <a href="#more" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
-                        <i class="fas fa-ellipsis-h mr-1"></i>More
-                    </a>
+
+                    <div class="dropdown" id="moreDropdown">
+                        <a href="#more" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">
+                            <i class="fas fa-ellipsis-h mr-1"></i>More
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-camera"></i>Photos
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-calendar"></i>Best Time To Visit
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-info-circle"></i>Travel Tips
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-phone"></i>Contact Support
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -668,7 +774,7 @@
                         Explore India
                     </button>
                     <div id="searchBar" class="hidden bg-white rounded-full px-6 py-4 shadow-lg flex items-center">
-                        <gmpx-place-picker placeholder="Search destinations in India" class="bg-transparent outline-none text-gray-900 text-lg w-80" country="IN" type="tourist_attraction"></gmpx-place-picker>
+                        <gmpx-place-picker placeholder="Search destinations in India" class="bg-transparent outline-none text-gray-900 text-lg w-80" country="IN" types="tourist_attraction|cities" restrict-to-country="IN"></gmpx-place-picker>
                         <button id="searchBtn" class="bg-blue-600 text-white px-4 py-2 rounded-full ml-2 hover:bg-blue-700 transition">
                             <i class="fas fa-search"></i>
                         </button>
@@ -1186,6 +1292,25 @@
                 <i class="fas fa-times text-xl"></i>
             </button>
             <div id="cityModalContent"></div>
+        </div>
+    </div>
+
+    <!-- Packages Modal -->
+    <div id="packagesModal" class="modal">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 relative">
+            <button id="closePackagesModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <div class="text-center">
+                <div class="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-box text-blue-600 text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Exciting Packages Coming Soon!</h2>
+                <p class="text-gray-600 mb-6">We're working on amazing travel packages for different cities across India. Stay tuned for incredible deals and curated experiences!</p>
+                <button class="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition">
+                    Notify Me
+                </button>
+            </div>
         </div>
     </div>
 

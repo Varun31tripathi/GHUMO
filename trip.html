@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Your Trip - TripPlanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/@googlemaps/extended-component-library/0.6.11/index.min.js"></script>
+    <gmpx-api-loader key="AIzaSyAThBvfegbLCNbV3kE0BblHJT64roIYrdk" solution-channel="GMP_GE_placepicker_v2"></gmpx-api-loader>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAThBvfegbLCNbV3kE0BblHJT64roIYrdk&libraries=places" async defer></script>
+    <style>
+        .hero-bg {
+            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.3)), url('images/kerala.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .day-card {
+            transition: all 0.3s ease;
+        }
+        .day-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .param-card {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .param-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+        .param-card:hover::before {
+            left: 100%;
+        }
+        .param-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md shadow-lg fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-plane text-blue-600 text-2xl"></i>
+                    <span class="text-2xl font-bold text-gray-800">TripPlanner</span>
+                </div>
+                
+                <div class="hidden md:flex space-x-8">
+                    <a href="#home" class="text-gray-700 hover:text-blue-600 transition">Home</a>
+                    <a href="#destinations" class="text-gray-700 hover:text-blue-600 transition">Destinations</a>
+                    <a href="#itinerary" class="text-gray-700 hover:text-blue-600 transition">Itinerary</a>
+                    <a href="#hotels" class="text-gray-700 hover:text-blue-600 transition">Hotels</a>
+                    <a href="#packages" class="text-gray-700 hover:text-blue-600 transition">Packages</a>
+                    <a href="#mytrips" onclick="showMyTrips(); return false;" class="text-gray-700 hover:text-blue-600 transition">My Trips</a>
+                    <a href="#contact" class="text-gray-700 hover:text-blue-600 transition">Contact</a>
+                </div>
+                
+                <div class="flex items-center space-x-6">
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600 transition">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Home
+                    </a>
+                    <button onclick="showProfile()" class="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center hover:bg-blue-700 transition">
+                        <i class="fas fa-user text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-bg min-h-screen flex items-center justify-center pt-20">
+        <div class="max-w-4xl mx-auto text-center px-4">
+            <!-- Search Bar -->
+            <div class="glass-card rounded-2xl p-6 mb-8 max-w-2xl mx-auto">
+                <div class="text-center mb-4">
+                    <h3 class="text-white font-semibold text-lg mb-2">Change Destination</h3>
+                    <p class="text-white/70 text-sm">Search for amazing places in India</p>
+                </div>
+                <div class="relative">
+                    <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-4 flex items-center border border-white/30 hover:border-white/50 transition-all duration-300">
+                        <div class="bg-blue-500/20 p-2 rounded-full mr-4">
+                            <i class="fas fa-search text-blue-300 text-lg"></i>
+                        </div>
+                        <gmpx-place-picker placeholder="Search destinations in India..." class="bg-transparent outline-none text-white placeholder-white/70 flex-1 text-lg" country="IN" types="tourist_attraction|cities" restrict-to-country="IN"></gmpx-place-picker>
+                        <button class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-xl hover:from-blue-400 hover:to-purple-500 transition-all duration-300 ml-3">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card rounded-3xl p-8 mb-8">
+                <h1 class="text-5xl font-bold text-white mb-4" id="destinationName">Plan Your Perfect Trip</h1>
+                <p class="text-xl text-white/90 mb-6" id="destinationAddress">Create unforgettable memories</p>
+                <div class="mb-8">
+                    <div class="flex items-center justify-center mb-6">
+                        <div class="h-px bg-gradient-to-r from-transparent via-white/50 to-transparent w-32"></div>
+                        <span class="mx-4 text-white/70 text-sm font-medium">Customize Your Journey</span>
+                        <div class="h-px bg-gradient-to-r from-transparent via-white/50 to-transparent w-32"></div>
+                    </div>
+                    
+                    <form class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                        <!-- Duration Card -->
+                        <div class="param-card bg-gradient-to-br from-white/25 to-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-blue-500/20 p-3 rounded-full mr-3">
+                                    <i class="fas fa-calendar text-blue-300 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-semibold text-lg">Duration</h3>
+                                    <p class="text-white/70 text-sm">Trip length</p>
+                                </div>
+                            </div>
+                            <select class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-white/40 transition" id="durationSelect">
+                                <option value="3" class="text-gray-800">3 Days</option>
+                                <option value="5" selected class="text-gray-800">5 Days</option>
+                                <option value="7" class="text-gray-800">7 Days</option>
+                                <option value="10" class="text-gray-800">10 Days</option>
+                                <option value="custom" class="text-gray-800">Custom</option>
+                            </select>
+                            <input type="number" id="customDuration" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-white/40 transition mt-3 hidden" placeholder="Enter days">
+                        </div>
+                        
+                        <!-- Travelers Card -->
+                        <div class="param-card bg-gradient-to-br from-white/25 to-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-green-500/20 p-3 rounded-full mr-3">
+                                    <i class="fas fa-users text-green-300 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-semibold text-lg">Travelers</h3>
+                                    <p class="text-white/70 text-sm">Group size</p>
+                                </div>
+                            </div>
+                            <select class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-white/40 transition" id="travelersSelect">
+                                <option value="1" class="text-gray-800">1 Traveler</option>
+                                <option value="2" selected class="text-gray-800">2 Travelers</option>
+                                <option value="3" class="text-gray-800">3 Travelers</option>
+                                <option value="4" class="text-gray-800">4 Travelers</option>
+                                <option value="custom" class="text-gray-800">Custom</option>
+                            </select>
+                            <input type="number" id="customTravelers" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-white/40 transition mt-3 hidden" placeholder="Enter count">
+                        </div>
+                        
+                        <!-- Budget Card -->
+                        <div class="param-card bg-gradient-to-br from-white/25 to-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-yellow-500/20 p-3 rounded-full mr-3">
+                                    <i class="fas fa-rupee-sign text-yellow-300 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-semibold text-lg">Budget</h3>
+                                    <p class="text-white/70 text-sm">Total cost</p>
+                                </div>
+                            </div>
+                            <select class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-white/40 transition" id="budgetSelect">
+                                <option value="5000" class="text-gray-800">₹5,000</option>
+                                <option value="15000" class="text-gray-800">₹15,000</option>
+                                <option value="25000" selected class="text-gray-800">₹25,000</option>
+                                <option value="40000" class="text-gray-800">₹40,000</option>
+                                <option value="60000" class="text-gray-800">₹60,000</option>
+                                <option value="custom" class="text-gray-800">Custom</option>
+                            </select>
+                            <input type="number" id="customBudget" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-white/40 transition mt-3 hidden" placeholder="Enter amount">
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                        <button id="viewDetailsBtn" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-blue-400 hover:to-purple-500 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            <i class="fas fa-eye mr-2"></i>View Details
+                        </button>
+                        <button class="bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-8 py-4 rounded-full text-lg font-semibold hover:from-yellow-300 hover:to-orange-400 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            <i class="fas fa-magic mr-2"></i>Generate with A.I.
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- How to Reach Section -->
+    <section id="howToReachSection" class="py-20 bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 hidden">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="text-center mb-16">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full mb-6">
+                    <i class="fas fa-route text-white text-2xl"></i>
+                </div>
+                <h2 class="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-4">How to Reach</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Complete travel guide to reach your destination</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="group bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer" onclick="selectTravelMode('air')">
+                    <div class="bg-gradient-to-r from-blue-500 to-sky-500 w-20 h-20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-plane text-white text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">By Air</h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">Nearest airport and flight connections</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-center text-gray-700"><div class="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>Major airlines available</li>
+                        <li class="flex items-center text-gray-700"><div class="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>Airport transfer options</li>
+                        <li class="flex items-center text-gray-700"><div class="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>Flight duration details</li>
+                    </ul>
+                </div>
+
+                <div class="group bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer" onclick="selectTravelMode('train')">
+                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 w-20 h-20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-train text-white text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">By Train</h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">Railway connections and stations</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-center text-gray-700"><div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>Major railway stations</li>
+                        <li class="flex items-center text-gray-700"><div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>Express train options</li>
+                        <li class="flex items-center text-gray-700"><div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>Journey time estimates</li>
+                    </ul>
+                </div>
+
+                <div class="group bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer" onclick="selectTravelMode('road')">
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 w-20 h-20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-car text-white text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">By Road</h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">Highway routes and road conditions</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-center text-gray-700"><div class="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>National highway access</li>
+                        <li class="flex items-center text-gray-700"><div class="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>Bus services available</li>
+                        <li class="flex items-center text-gray-700"><div class="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>Driving distance info</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Choose Your Stay Section -->
+    <section id="chooseStaySection" class="py-20 bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 hidden">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex items-start gap-8">
+                <!-- Selected Mode Tab -->
+                <div id="selectedModeTab" class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/20 min-w-48">
+                    <div class="text-center">
+                        <div id="selectedModeIcon" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="text-white text-xl"></i>
+                        </div>
+                        <h4 id="selectedModeText" class="font-bold text-gray-800">Selected Mode</h4>
+                        <p id="selectedModeDetails" class="text-sm text-gray-600 mt-1"></p>
+                    </div>
+                </div>
+                
+                <!-- Stay Options -->
+                <div class="flex-1">
+                    <div class="text-center mb-12">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-full mb-6">
+                            <i class="fas fa-bed text-white text-2xl"></i>
+                        </div>
+                        <h2 class="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">Choose Your Stay</h2>
+                        <p class="text-xl text-gray-600">Select accommodation that suits your preferences</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20 hover:shadow-xl transition">
+                            <div class="bg-gradient-to-r from-yellow-500 to-orange-500 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
+                                <i class="fas fa-star text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Luxury Hotels</h3>
+                            <p class="text-gray-600 text-sm mb-4">5-star properties with premium amenities</p>
+                            <div class="text-blue-600 font-semibold mb-4">₹8,000 - ₹15,000/night</div>
+                            <a href="https://in.hotels.com/?locale=en_IN&pos=HCOM_IN&siteid=300000036" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full block text-center">
+                                <i class="fas fa-calendar-check mr-2"></i>Book Now
+                            </a>
+                        </div>
+                        
+                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20 hover:shadow-xl transition">
+                            <div class="bg-gradient-to-r from-blue-500 to-cyan-500 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
+                                <i class="fas fa-hotel text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Mid-Range Hotels</h3>
+                            <p class="text-gray-600 text-sm mb-4">Comfortable stays with good facilities</p>
+                            <div class="text-blue-600 font-semibold mb-4">₹3,000 - ₹7,000/night</div>
+                            <a href="https://in.hotels.com/?locale=en_IN&pos=HCOM_IN&siteid=300000036" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full block text-center">
+                                <i class="fas fa-calendar-check mr-2"></i>Book Now
+                            </a>
+                        </div>
+                        
+                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20 hover:shadow-xl transition">
+                            <div class="bg-gradient-to-r from-green-500 to-emerald-500 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
+                                <i class="fas fa-bed text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Budget Options</h3>
+                            <p class="text-gray-600 text-sm mb-4">Clean and affordable accommodations</p>
+                            <div class="text-blue-600 font-semibold mb-4">₹1,000 - ₹3,000/night</div>
+                            <a href="https://in.hotels.com/?locale=en_IN&pos=HCOM_IN&siteid=300000036" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full block text-center">
+                                <i class="fas fa-calendar-check mr-2"></i>Book Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Next Arrow -->
+                <div class="flex items-center justify-center ml-8">
+                    <button onclick="showTripSummary()" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center hover:from-blue-400 hover:to-purple-500 transition-all duration-300 transform hover:scale-110 shadow-lg">
+                        <i class="fas fa-arrow-right text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trip Summary Section -->
+    <section id="tripSummarySection" class="py-20 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 hidden">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="text-center mb-16">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full mb-6">
+                    <i class="fas fa-clipboard-list text-white text-2xl"></i>
+                </div>
+                <h2 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">Trip Summary</h2>
+                <p class="text-xl text-gray-600">Your complete travel plan overview</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-info-circle text-blue-600 mr-3"></i>Trip Details
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">Destination:</span>
+                            <span id="summaryDestination" class="font-semibold text-gray-800">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">Duration:</span>
+                            <span id="summaryDuration" class="font-semibold text-gray-800">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">Travelers:</span>
+                            <span id="summaryTravelers" class="font-semibold text-gray-800">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">Budget:</span>
+                            <span id="summaryBudget" class="font-semibold text-gray-800">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600">Travel Mode:</span>
+                            <span id="summaryTravelMode" class="font-semibold text-gray-800">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-receipt text-green-600 mr-3"></i>Booking Summary
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl">
+                            <h4 class="font-bold text-blue-800 mb-2">Transportation</h4>
+                            <p class="text-gray-700 text-sm">Book flights, trains, or road transport</p>
+                        </div>
+                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl">
+                            <h4 class="font-bold text-green-800 mb-2">Accommodation</h4>
+                            <p class="text-gray-700 text-sm">Hotels booked via Hotels.com</p>
+                        </div>
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl">
+                            <h4 class="font-bold text-purple-800 mb-2">Activities</h4>
+                            <p class="text-gray-700 text-sm">Local attractions and experiences</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 text-center">
+                        <button onclick="confirmTrip()" class="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-3 rounded-full hover:from-green-400 hover:to-blue-500 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            <i class="fas fa-check-circle mr-2"></i>Confirm Trip
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Suggested Places Section -->
+    <section id="suggestedPlacesSection" class="py-20 bg-white">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Suggested Places</h2>
+                <p class="text-xl text-gray-600">Top-rated destinations based on user reviews</p>
+            </div>
+            <div class="grid md:grid-cols-3 lg:grid-cols-5 gap-6">
+                <div class="relative rounded-2xl shadow-lg hover:shadow-xl transition overflow-hidden h-64" style="background-image: url('images/taj.jpeg'); background-size: cover; background-position: center;">
+                    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                    <div class="relative z-10 p-6 h-full flex flex-col justify-end text-white">
+                        <h3 class="text-xl font-bold mb-2">Taj Mahal</h3>
+                        <div class="flex items-center mb-2">
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <span class="ml-2 text-white text-sm">4.8 (12,450)</span>
+                        </div>
+                        <p class="text-white text-sm">Iconic symbol of love</p>
+                    </div>
+                </div>
+                <div class="relative rounded-2xl shadow-lg hover:shadow-xl transition overflow-hidden h-64" style="background-image: url('images/himalayas.jpg'); background-size: cover; background-position: center;">
+                    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                    <div class="relative z-10 p-6 h-full flex flex-col justify-end text-white">
+                        <h3 class="text-xl font-bold mb-2">Kashmir Valley</h3>
+                        <div class="flex items-center mb-2">
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <span class="ml-2 text-white text-sm">4.7 (8,920)</span>
+                        </div>
+                        <p class="text-white text-sm">Paradise on earth</p>
+                    </div>
+                </div>
+                <div class="relative rounded-2xl shadow-lg hover:shadow-xl transition overflow-hidden h-64" style="background-image: url('images/kerala.jpg'); background-size: cover; background-position: center;">
+                    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                    <div class="relative z-10 p-6 h-full flex flex-col justify-end text-white">
+                        <h3 class="text-xl font-bold mb-2">Kerala Backwaters</h3>
+                        <div class="flex items-center mb-2">
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <span class="ml-2 text-white text-sm">4.6 (7,340)</span>
+                        </div>
+                        <p class="text-white text-sm">Serene waterways</p>
+                    </div>
+                </div>
+                <div class="relative rounded-2xl shadow-lg hover:shadow-xl transition overflow-hidden h-64" style="background-image: url('images/jaipur.jpg'); background-size: cover; background-position: center;">
+                    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                    <div class="relative z-10 p-6 h-full flex flex-col justify-end text-white">
+                        <h3 class="text-xl font-bold mb-2">Rajasthan</h3>
+                        <div class="flex items-center mb-2">
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <span class="ml-2 text-white text-sm">4.5 (9,850)</span>
+                        </div>
+                        <p class="text-white text-sm">Royal heritage</p>
+                    </div>
+                </div>
+                <div class="relative rounded-2xl shadow-lg hover:shadow-xl transition overflow-hidden h-64" style="background-image: url('images/mumbai.jpg'); background-size: cover; background-position: center;">
+                    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                    <div class="relative z-10 p-6 h-full flex flex-col justify-end text-white">
+                        <h3 class="text-xl font-bold mb-2">Mumbai</h3>
+                        <div class="flex items-center mb-2">
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <span class="ml-2 text-white text-sm">4.4 (11,200)</span>
+                        </div>
+                        <p class="text-white text-sm">City of dreams</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-gradient-to-r from-blue-600 to-purple-700">
+        <div class="max-w-4xl mx-auto text-center px-4">
+            <h2 class="text-4xl font-bold text-white mb-6">Ready to Book This Trip?</h2>
+            <p class="text-xl text-blue-100 mb-8">Secure your spot and start your adventure</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button class="bg-yellow-400 text-gray-900 px-8 py-4 rounded-full text-lg font-semibold hover:bg-yellow-300 transition">
+                    <i class="fas fa-credit-card mr-2"></i>Book Now
+                </button>
+                <button class="border-2 border-white text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-white hover:text-gray-900 transition">
+                    <i class="fas fa-share mr-2"></i>Share Trip
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Profile Sidebar -->
+    <div id="profileSidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Profile</h2>
+                <button onclick="closeProfile()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="text-center mb-6">
+                <div class="bg-blue-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">John Doe</h3>
+                <p class="text-gray-600">john@example.com</p>
+            </div>
+            <div class="space-y-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Total Trips</span>
+                        <span id="profileTripCount" class="font-bold text-blue-600">0</span>
+                    </div>
+                </div>
+                <button onclick="showMyTrips(); closeProfile();" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-suitcase mr-2"></i>My Trips
+                </button>
+                <button class="w-full bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition">
+                    <i class="fas fa-cog mr-2"></i>Settings
+                </button>
+                <button class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="profileOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40" onclick="closeProfile()"></div>
+
+    <script>
+        // Get location data from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const locationData = urlParams.get('location');
+        
+        if (locationData) {
+            try {
+                const data = JSON.parse(decodeURIComponent(locationData));
+                document.getElementById('destinationName').textContent = `Trip to ${data.name}`;
+                document.getElementById('destinationAddress').textContent = data.address;
+            } catch (e) {
+                console.error('Error parsing location data:', e);
+            }
+        }
+        
+        // Form functionality
+        document.getElementById('durationSelect').addEventListener('change', function() {
+            const customInput = document.getElementById('customDuration');
+            if (this.value === 'custom') {
+                customInput.classList.remove('hidden');
+                customInput.focus();
+            } else {
+                customInput.classList.add('hidden');
+            }
+        });
+        
+        document.getElementById('travelersSelect').addEventListener('change', function() {
+            const customInput = document.getElementById('customTravelers');
+            if (this.value === 'custom') {
+                customInput.classList.remove('hidden');
+                customInput.focus();
+            } else {
+                customInput.classList.add('hidden');
+            }
+        });
+        
+        document.getElementById('budgetSelect').addEventListener('change', function() {
+            const customInput = document.getElementById('customBudget');
+            if (this.value === 'custom') {
+                customInput.classList.remove('hidden');
+                customInput.focus();
+            } else {
+                customInput.classList.add('hidden');
+            }
+        });
+        
+        // Helper function to extract city name from address
+        function extractCityName(address) {
+            const parts = address.split(',');
+            // Look for city name (usually second or third part)
+            for (let i = 1; i < parts.length; i++) {
+                const part = parts[i].trim();
+                if (part && !part.match(/\d/) && part !== 'India') {
+                    return part;
+                }
+            }
+            return parts[parts.length - 2]?.trim() || 'India';
+        }
+        
+        // Initialize place picker
+        setTimeout(() => {
+            const placePicker = document.querySelector('gmpx-place-picker');
+            if (placePicker) {
+                placePicker.addEventListener('gmpx-placechange', () => {
+                    const place = placePicker.value;
+                    if (place && place.location) {
+                        const address = place.formattedAddress || '';
+                        if (address.toLowerCase().includes('india') || address.toLowerCase().includes('भारत')) {
+                            const placeName = place.displayName || place.name;
+                            const cityName = extractCityName(address);
+                            document.getElementById('destinationName').textContent = `Trip to ${placeName}`;
+                            document.getElementById('destinationAddress').textContent = cityName;
+                        } else {
+                            alert('Please select a destination within India only.');
+                        }
+                    }
+                });
+                
+                // Add Enter key functionality for navbar search
+                placePicker.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const place = this.value;
+                        if (place && place.location) {
+                            const address = place.formattedAddress || '';
+                            if (address.toLowerCase().includes('india') || address.toLowerCase().includes('भारत')) {
+                                const placeName = place.displayName || place.name;
+                                const cityName = extractCityName(address);
+                                document.getElementById('destinationName').textContent = `Trip to ${placeName}`;
+                                document.getElementById('destinationAddress').textContent = cityName;
+                            } else {
+                                alert('Please select a destination within India only.');
+                            }
+                        }
+                    }
+                });
+            }
+        }, 1000);
+        
+        // View Details button functionality
+        document.getElementById('viewDetailsBtn').addEventListener('click', function() {
+            console.log('View Details button clicked');
+            updateTripContent();
+            const howToReachSection = document.getElementById('howToReachSection');
+            
+            if (howToReachSection) {
+                howToReachSection.classList.remove('hidden');
+                console.log('How to reach section shown');
+                howToReachSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+        
+        // Update trip content based on destination and parameters
+        function updateTripContent() {
+            const destinationName = document.getElementById('destinationName').textContent;
+            const cityName = destinationName.replace('Trip to ', '').toLowerCase();
+            
+            // Get selected parameters
+            const duration = document.getElementById('durationSelect').value === 'custom' ? 
+                document.getElementById('customDuration').value : document.getElementById('durationSelect').value;
+            const travelers = document.getElementById('travelersSelect').value === 'custom' ? 
+                document.getElementById('customTravelers').value : document.getElementById('travelersSelect').value;
+            const budget = document.getElementById('budgetSelect').value === 'custom' ? 
+                document.getElementById('customBudget').value : document.getElementById('budgetSelect').value;
+            
+            const tripData = {
+                'taj mahal': {
+                    airInfo: 'Agra Airport (AGR) 7km away, Delhi IGI Airport 230km',
+                    trainInfo: 'Agra Cantt Railway Station, Gatimaan Express from Delhi',
+                    roadInfo: 'NH19 from Delhi (200km), well-maintained highways'
+                },
+                'agra': {
+                    airInfo: 'Agra Airport (AGR) 7km away, Delhi IGI Airport 230km',
+                    trainInfo: 'Agra Cantt Railway Station, Gatimaan Express from Delhi',
+                    roadInfo: 'NH19 from Delhi (200km), well-maintained highways'
+                },
+                'kerala': {
+                    airInfo: 'Kochi Airport (COK) international connectivity',
+                    trainInfo: 'Ernakulam Junction, extensive rail network',
+                    roadInfo: 'NH66 coastal highway, scenic mountain roads'
+                },
+                'kochi': {
+                    day1: { morning: 'Arrive in Kochi, check into hotel', afternoon: 'Chinese fishing nets, Fort Kochi', evening: 'Kathakali performance' },
+                    day2: { morning: 'Mattancherry Palace', afternoon: 'Spice market tour', evening: 'Sunset cruise' },
+                    day3: { morning: 'Jewish Synagogue', afternoon: 'Departure' },
+                    accommodation: 'Heritage hotel in Fort Kochi',
+                    transport: 'Private car and boat',
+                    meals: 'Kerala coastal cuisine'
+                },
+                'mumbai': {
+                    airInfo: 'Chhatrapati Shivaji International Airport (BOM)',
+                    trainInfo: 'CST, Dadar, Bandra stations - major rail hub',
+                    roadInfo: 'NH48, NH66 - excellent highway connectivity'
+                },
+                'delhi': {
+                    airInfo: 'Indira Gandhi International Airport (DEL) - major hub',
+                    trainInfo: 'New Delhi Railway Station - central location',
+                    roadInfo: 'NH1, NH8, NH24 - national highway junction'
+                },
+                'jaipur': {
+                    airInfo: 'Jaipur Airport (JAI) 13km from city center',
+                    trainInfo: 'Jaipur Junction - major railway station',
+                    roadInfo: 'NH8, NH11 - Delhi 280km via expressway'
+                },
+                'goa': {
+                    airInfo: 'Goa Airport (GOI) Dabolim - international flights',
+                    trainInfo: 'Margao, Thivim stations - Konkan Railway',
+                    roadInfo: 'NH66 coastal route, NH4A from Bangalore'
+                },
+                'varanasi': {
+                    airInfo: 'Varanasi Airport (VNS) 25km from city',
+                    trainInfo: 'Varanasi Junction - major rail hub',
+                    roadInfo: 'NH2, NH7 - well connected by highways'
+                },
+                'manali': {
+                    airInfo: 'Kullu Airport (KUU) 50km - limited flights',
+                    trainInfo: 'Nearest: Chandigarh (310km), then road',
+                    roadInfo: 'NH3 via Chandigarh - scenic mountain roads'
+                }
+            };
+            
+            // Better matching for searched places
+            let matchedKey = null;
+            for (const key in tripData) {
+                if (cityName.includes(key) || key.includes(cityName.split(' ')[0])) {
+                    matchedKey = key;
+                    break;
+                }
+            }
+            const data = tripData[matchedKey] || tripData['delhi'];
+            
+            // No itinerary section to update
+            
+            // Day cards are now dynamically generated above
+            
+            // Update how to reach content based on destination
+            const airInfo = document.querySelector('#howToReachSection .group:nth-child(1) p');
+            const trainInfo = document.querySelector('#howToReachSection .group:nth-child(2) p');
+            const roadInfo = document.querySelector('#howToReachSection .group:nth-child(3) p');
+            
+            if (airInfo) airInfo.textContent = data.airInfo || 'Nearest airport with connecting flights';
+            if (trainInfo) trainInfo.textContent = data.trainInfo || 'Major railway station with express trains';
+            if (roadInfo) roadInfo.textContent = data.roadInfo || 'Well-connected by national highways';
+        }
+        
+        // Add Enter key functionality for custom inputs
+        document.getElementById('customDuration').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.blur();
+            }
+        });
+        
+        document.getElementById('customTravelers').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.blur();
+            }
+        });
+        
+        document.getElementById('customBudget').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.blur();
+            }
+        });
+        
+        // Select travel mode function
+        window.selectTravelMode = function(mode) {
+            const howToReachSection = document.getElementById('howToReachSection');
+            const chooseStaySection = document.getElementById('chooseStaySection');
+            const selectedModeIcon = document.getElementById('selectedModeIcon');
+            const selectedModeText = document.getElementById('selectedModeText');
+            const selectedModeDetails = document.getElementById('selectedModeDetails');
+            
+            // Hide how to reach section
+            howToReachSection.classList.add('hidden');
+            
+            // Update selected mode tab
+            const modeConfig = {
+                'air': {
+                    icon: 'fas fa-plane',
+                    text: 'By Air',
+                    details: 'Flight booking',
+                    color: 'bg-gradient-to-r from-blue-500 to-sky-500'
+                },
+                'train': {
+                    icon: 'fas fa-train',
+                    text: 'By Train',
+                    details: 'Railway journey',
+                    color: 'bg-gradient-to-r from-green-500 to-emerald-500'
+                },
+                'road': {
+                    icon: 'fas fa-car',
+                    text: 'By Road',
+                    details: 'Road trip',
+                    color: 'bg-gradient-to-r from-purple-500 to-pink-500'
+                }
+            };
+            
+            const config = modeConfig[mode];
+            selectedModeIcon.className = `w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 ${config.color}`;
+            selectedModeIcon.querySelector('i').className = `${config.icon} text-white text-xl`;
+            selectedModeText.textContent = config.text;
+            selectedModeDetails.textContent = config.details;
+            
+            // Show choose stay section
+            chooseStaySection.classList.remove('hidden');
+            chooseStaySection.scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        // Show trip summary function
+        window.showTripSummary = function() {
+            const chooseStaySection = document.getElementById('chooseStaySection');
+            const tripSummarySection = document.getElementById('tripSummarySection');
+            
+            // Get trip parameters
+            const destination = document.getElementById('destinationName').textContent.replace('Trip to ', '');
+            const duration = document.getElementById('durationSelect').value === 'custom' ? 
+                document.getElementById('customDuration').value + ' days' : document.getElementById('durationSelect').value + ' days';
+            const travelers = document.getElementById('travelersSelect').value === 'custom' ? 
+                document.getElementById('customTravelers').value + ' travelers' : document.getElementById('travelersSelect').value + ' travelers';
+            const budget = document.getElementById('budgetSelect').value === 'custom' ? 
+                '₹' + document.getElementById('customBudget').value : '₹' + document.getElementById('budgetSelect').value;
+            const travelMode = document.getElementById('selectedModeText').textContent || 'Not selected';
+            
+            // Update summary
+            document.getElementById('summaryDestination').textContent = destination;
+            document.getElementById('summaryDuration').textContent = duration;
+            document.getElementById('summaryTravelers').textContent = travelers;
+            document.getElementById('summaryBudget').textContent = budget;
+            document.getElementById('summaryTravelMode').textContent = travelMode;
+            
+            // Hide choose stay section and show summary
+            chooseStaySection.classList.add('hidden');
+            tripSummarySection.classList.remove('hidden');
+            tripSummarySection.scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        // Confirm trip function
+        window.confirmTrip = function() {
+            const tripData = {
+                id: Date.now(),
+                destination: document.getElementById('summaryDestination').textContent,
+                duration: document.getElementById('summaryDuration').textContent,
+                travelers: document.getElementById('summaryTravelers').textContent,
+                budget: document.getElementById('summaryBudget').textContent,
+                travelMode: document.getElementById('summaryTravelMode').textContent,
+                createdAt: new Date().toLocaleDateString(),
+                status: 'Confirmed'
+            };
+            
+            // Save to localStorage
+            let savedTrips = JSON.parse(localStorage.getItem('myTrips') || '[]');
+            savedTrips.push(tripData);
+            localStorage.setItem('myTrips', JSON.stringify(savedTrips));
+            
+            alert('Trip confirmed and saved to My Trips!');
+            
+            // Redirect to My Trips section
+            showMyTrips();
+        };
+        
+        // Show My Trips function
+        window.showMyTrips = function() {
+            // Hide all other sections
+            document.getElementById('tripSummarySection').classList.add('hidden');
+            document.getElementById('chooseStaySection').classList.add('hidden');
+            document.getElementById('howToReachSection').classList.add('hidden');
+            document.querySelector('section.hero-bg').classList.add('hidden');
+            document.getElementById('suggestedPlacesSection').classList.add('hidden');
+            
+            // Show My Trips section
+            let myTripsSection = document.getElementById('myTripsSection');
+            if (!myTripsSection) {
+                // Create My Trips section if it doesn't exist
+                myTripsSection = document.createElement('section');
+                myTripsSection.id = 'myTripsSection';
+                myTripsSection.className = 'py-20 bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50';
+                document.body.appendChild(myTripsSection);
+            }
+            
+            // Load saved trips
+            const savedTrips = JSON.parse(localStorage.getItem('myTrips') || '[]');
+            
+            myTripsSection.innerHTML = `
+                <div class="max-w-6xl mx-auto px-4">
+                    <div class="text-center mb-16">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-6">
+                            <i class="fas fa-suitcase text-white text-2xl"></i>
+                        </div>
+                        <h2 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">My Trips</h2>
+                        <p class="text-xl text-gray-600">Your saved travel plans and adventures</p>
+                    </div>
+                    
+                    ${savedTrips.length === 0 ? `
+                        <div class="text-center py-16">
+                            <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-12 max-w-md mx-auto">
+                                <i class="fas fa-map text-gray-400 text-6xl mb-6"></i>
+                                <h3 class="text-2xl font-bold text-gray-800 mb-4">No Trips Yet</h3>
+                                <p class="text-gray-600 mb-6">Start planning your first adventure!</p>
+                                <button onclick="location.reload()" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-full hover:from-blue-400 hover:to-purple-500 transition">
+                                    <i class="fas fa-plus mr-2"></i>Plan New Trip
+                                </button>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${savedTrips.map(trip => `
+                                <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 w-12 h-12 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-map-marker-alt text-white"></i>
+                                        </div>
+                                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">${trip.status}</span>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gray-800 mb-2">${trip.destination}</h3>
+                                    <div class="space-y-2 mb-4">
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">Duration:</span>
+                                            <span class="font-medium">${trip.duration}</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">Travelers:</span>
+                                            <span class="font-medium">${trip.travelers}</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">Budget:</span>
+                                            <span class="font-medium">${trip.budget}</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">Travel Mode:</span>
+                                            <span class="font-medium">${trip.travelMode}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mb-4">Created: ${trip.createdAt}</div>
+                                    <div class="flex gap-2">
+                                        <button onclick="editTrip(${trip.id})" class="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-700 transition text-sm">
+                                            <i class="fas fa-edit mr-1"></i>Edit
+                                        </button>
+                                        <button onclick="deleteTrip(${trip.id})" class="flex-1 bg-red-600 text-white py-2 px-3 rounded-lg hover:bg-red-700 transition text-sm">
+                                            <i class="fas fa-trash mr-1"></i>Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="text-center mt-12">
+                            <button onclick="location.reload()" class="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-3 rounded-full hover:from-green-400 hover:to-blue-500 transition">
+                                <i class="fas fa-plus mr-2"></i>Plan Another Trip
+                            </button>
+                        </div>
+                    `}
+                </div>
+            `;
+            
+            myTripsSection.classList.remove('hidden');
+            myTripsSection.scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        // Edit trip function
+        window.editTrip = function(tripId) {
+            alert('Edit functionality coming soon!');
+        };
+        
+        // Delete trip function
+        window.deleteTrip = function(tripId) {
+            if (confirm('Are you sure you want to delete this trip?')) {
+                let savedTrips = JSON.parse(localStorage.getItem('myTrips') || '[]');
+                savedTrips = savedTrips.filter(trip => trip.id !== tripId);
+                localStorage.setItem('myTrips', JSON.stringify(savedTrips));
+                showMyTrips(); // Refresh the display
+            }
+        };
+        
+        // Show profile function
+        window.showProfile = function() {
+            const sidebar = document.getElementById('profileSidebar');
+            const overlay = document.getElementById('profileOverlay');
+            const tripCount = JSON.parse(localStorage.getItem('myTrips') || '[]').length;
+            
+            document.getElementById('profileTripCount').textContent = tripCount;
+            sidebar.classList.remove('translate-x-full');
+            overlay.classList.remove('hidden');
+        };
+        
+        // Close profile function
+        window.closeProfile = function() {
+            const sidebar = document.getElementById('profileSidebar');
+            const overlay = document.getElementById('profileOverlay');
+            
+            sidebar.classList.add('translate-x-full');
+            overlay.classList.add('hidden');
+        };
+    </script>
+</body>
+</html>
